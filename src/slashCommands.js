@@ -31,7 +31,7 @@ module.exports = function slashCommands(client) {
       const { question, allAnswers, correctAnswer } = questionBank.pop();
       
       // Shuffle the answers 
-      const shuffledAnswers = shuffleArray(allAnswers); // Use your existing shuffleArray function
+      const shuffledAnswers = shuffleArray(allAnswers);
 
       // Construct buttons
       const buttons = shuffledAnswers.map(answer =>
