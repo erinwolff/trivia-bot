@@ -44,7 +44,7 @@ module.exports = async function handleQuestionCommand(interaction, questionBank)
     });
 
     // Button Interaction Collector
-    const collector = interaction.channel.createMessageComponentCollector({ time: 30000 });
+    const collector = interaction.channel.createMessageComponentCollector({ time: 120000 });
 
     collector.on('collect', async i => {
       await i.deferUpdate();
