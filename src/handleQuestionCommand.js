@@ -58,6 +58,7 @@ module.exports = async function handleQuestionCommand(interaction, questionBank)
       } else {
         await interaction.editReply({ content: `Nice try, but that's not the right answer 😔 
         ${bold("Original Question:")} ${question}
+        ${bold("Your Answer:")} ${chosenAnswer}
         ${bold("Correct Answer:")} ${correctAnswer}`, components: [] });
       }
 
