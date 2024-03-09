@@ -52,11 +52,11 @@ module.exports = async function handleQuestionCommand(interaction, questionBank)
 
       // If the answer is correct, displays message with question & correct answer. If incorrect, alerts user and shares question & correct answer. 
       if (correctAnswer === chosenAnswer) {
-        await interaction.editReply({ content: `Correct! 🎉 
+        await interaction.editReply({ content: `Correct! ${interaction.user.username} wins again! 🎉 
         ${bold("Original Question:")} ${question} 
         ${bold("Correct Answer:")} ${correctAnswer}  `, components: [] });
       } else {
-        await interaction.editReply({ content: `Nice try, but that's not the right answer 😔 
+        await interaction.editReply({ content: `Nice try, ${interaction.user.username}, but that's not the right answer 😔 
         ${bold("Original Question:")} ${question}
         ${bold("Your Answer:")} ${chosenAnswer}
         ${bold("Correct Answer:")} ${correctAnswer}`, components: [] });
