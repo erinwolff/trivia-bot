@@ -1,4 +1,5 @@
 const fetchRandomQuestions = require('./fetchRandomQuestions');
+const generateLeaderboard = require('./generateLeaderboard');
 const handleQuestionCommand = require('./handleQuestionCommand');
 
 
@@ -23,8 +24,13 @@ module.exports = function slashCommands(client) {
         }
       }
       handleQuestionCommand(interaction, questionBank);
+      
+    } else if (commandName === 'leaderboard') {
+      // Placeholder for leaderboard command
+      await interaction.deferReply();
+      const message = await generateLeaderboard(client, interaction);
+      
+      await interaction.editReply(message);
     }
   });
-
-  
 }

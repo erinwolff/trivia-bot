@@ -6,6 +6,10 @@ const commands = [
   {
     name: "question",
     description: "Get a random trivia question!",
+  },
+  {
+    name: "leaderboard",
+    description: "Get the current leaderboard.",
   }
   // Add other commands as needed
 ];
