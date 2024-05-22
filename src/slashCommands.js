@@ -1,6 +1,6 @@
 const fetchRandomQuestions = require("./fetchRandomQuestions");
 const generateLeaderboard = require("./generateLeaderboard");
-const handleQuestionCommand = require("./handleQuestionCommand");
+const handleTriviaCommand = require("./handleTriviaCommand");
 
 // Function to handle slash commands incoming from Discord (interaction)
 module.exports = function slashCommands(client) {
@@ -24,7 +24,7 @@ module.exports = function slashCommands(client) {
           return;
         }
       }
-      handleQuestionCommand(interaction, questionBank);
+      handleTriviaCommand(interaction, questionBank);
     } else if (commandName === "leaderboard") {
       // Placeholder for leaderboard command
       await interaction.deferReply();
