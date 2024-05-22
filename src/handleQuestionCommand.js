@@ -18,32 +18,33 @@ module.exports = async function handleQuestionCommand(
 ) {
   try {
     const userId = interaction.user.id;
-    // Check if a session is already active for this user
-    if (activeTriviaSessions.has(userId)) {
+    const serverId = interaction.guild.id;
+    const sessionId = `${userId}-${serverId}`;
+    let currentQuestion = null;
+
+    // Check if a session is already active for this user in this server
+    if (activeTriviaSessions.has(sessionId)) {
       return interaction.reply({
         content:
-          "You already have an active trivia session. Please finish that one first!",
+          "I appreciate your ambition, but you already have an active session in this server. Finish that one first!",
         ephemeral: true,
       });
     }
 
-    activeTriviaSessions.set(userId, {
-      sessionId: interaction.id,
-      categorySelectorId: null,
+    activeTriviaSessions.set(sessionId, {
+      sessionId: sessionId,
+      userId: userId,
+      serverId: serverId,
       clickCount: 0,
-      currentQuestion: null,
     });
 
     // Generate Category Buttons
-    const { chosenOption: selectedCategory, userId: categorySelectorId } =
-      await generateCategoryButtons(interaction);
+    const selectedCategory = await generateCategoryButtons(interaction);
 
     if (selectedCategory == null) {
       interaction.editReply(`Category selection timed out.`);
       return;
     }
-
-    let currentQuestion; // To store the fetched question
 
     // Fetch new questions only if questionBank is empty
     if (questionBank.length === 0) {
@@ -59,9 +60,8 @@ module.exports = async function handleQuestionCommand(
 
     const { question, allAnswers, correctAnswer } = currentQuestion;
 
-    activeTriviaSessions.set(userId, {
-      ...activeTriviaSessions.get(userId),
-      categorySelectorId,
+    activeTriviaSessions.set(sessionId, {
+      ...activeTriviaSessions.get(sessionId),
       currentQuestion,
     });
 
@@ -89,10 +89,10 @@ module.exports = async function handleQuestionCommand(
     });
 
     collector.on("collect", async (i) => {
-      const sessionData = activeTriviaSessions.get(userId);
+      const sessionData = activeTriviaSessions.get(sessionId);
 
       // Filter to only collect interactions from the user who initiated the command
-      const filter = (i) => i.user.id === sessionData.categorySelectorId;
+      const filter = (i) => i.user.id === sessionData.userId;
 
       if (!filter(i)) {
         const messageIndex =
@@ -106,7 +106,11 @@ module.exports = async function handleQuestionCommand(
         sessionData.clickCount++;
         return;
       }
-      await i.deferUpdate();
+      try {
+        await i.deferUpdate();
+      } catch (err) {
+        console.error("Failed to defer interaction:", err);
+      }
 
       const chosenAnswer = i.customId;
 
@@ -115,7 +119,7 @@ module.exports = async function handleQuestionCommand(
         await interaction.editReply({
           content: `Correct! ${interaction.user.username} wins again! 🎉 
         ${bold("Original Question:")} ${question} 
-        ${bold("Correct Answer:")} ${correctAnswer}  `,
+        ${bold("Correct Answer:")} ${correctAnswer}`,
           components: [],
         });
       } else {
@@ -135,17 +139,13 @@ module.exports = async function handleQuestionCommand(
 
     // Ends button listening if user didn't select an answer in time.
     collector.on("end", (collected) => {
-      const sessionData = activeTriviaSessions.get(userId);
-      if (
-        collected.size === 0 &&
-        sessionData &&
-        sessionData.sessionId === interaction.id
-      ) {
+      const sessionData = activeTriviaSessions.get(sessionId);
+      if (collected.size === 0 && sessionData) {
         interaction.followUp(
           `Time\'s up! The correct answer was ${sessionData.currentQuestion.correctAnswer}.`
         );
       }
-      activeTriviaSessions.delete(userId);
+      activeTriviaSessions.delete(sessionId);
     });
   } catch (error) {
     console.error("Error fetching trivia:", error);
