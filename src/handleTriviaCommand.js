@@ -1,9 +1,4 @@
-const {
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  bold,
-} = require("discord.js");
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 const fetchSingleQuestion = require("./fetchSingleQuestion");
 const shuffleArray = require("./shuffleArray");
 const constants = require("./constants");
@@ -17,16 +12,15 @@ module.exports = async function handleTriviaCommand(interaction, questionBank) {
     const finalSassyMessageIndex = constants.sassyMessages.length - 1;
     let clickCount = 0;
 
-    // Check if a session is already active for this user in this server
+    // Check if a session is already active for this user in any server
     if (activeTriviaSessions.has(userId)) {
       await interaction.reply({
-        content:
-          "I appreciate your ambition, but you already have an active session in this server. Finish that one first!",
+        content: `I appreciate your ambition, but you already have an active trivia session in server: **${interaction.guild.name}**. Finish that one first!`,
         ephemeral: true,
       });
       return;
     }
-
+    console.log("interaction", interaction);
     activeTriviaSessions.set(userId, { userId });
 
     // Fetch new questions only if questionBank is empty
@@ -118,7 +112,6 @@ module.exports = async function handleTriviaCommand(interaction, questionBank) {
     }
 
     const { question, allAnswers, correctAnswer } = currentQuestion;
-    console.log("currentQuestion:", currentQuestion);
 
     activeTriviaSessions.set(userId, {
       ...activeTriviaSessions.get(userId),
@@ -152,18 +145,16 @@ module.exports = async function handleTriviaCommand(interaction, questionBank) {
       if (confirmation.customId === correctAnswer) {
         await interaction.editReply({
           content: `Correct! ${interaction.user.username} wins again! 🎉
-          ${bold("Original Question:")} ${question}
-          ${bold("Correct Answer:")} ${correctAnswer}`,
+         **Original Question:** ${question}
+         **Correct Answer:** ${correctAnswer}`,
           components: [],
         });
       } else {
         await interaction.editReply({
-          content: `Nice try, ${
-            interaction.user.username
-          }, but that's not the right answer 😔
-          ${bold("Original Question:")} ${question}
-          ${bold("Your Answer:")} ${confirmation.customId}
-          ${bold("Correct Answer:")} ${correctAnswer}`,
+          content: `Nice try, ${interaction.user.username}, but that's not the right answer 😔
+          **Original Question:** ${question}
+          **Your Answer:** ${confirmation.customId}
+          **Correct Answer:** ${correctAnswer}`,
           components: [],
         });
       }
