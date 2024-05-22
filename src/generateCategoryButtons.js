@@ -27,7 +27,7 @@ module.exports = async function generateCategoryButtons(interaction) {
   );
 
   await interaction.reply({
-    content: "Select a category to get started!",
+    content: `Select a category to get started, ${interaction.user.username}!`,
     components: [row],
   });
 
@@ -53,13 +53,16 @@ module.exports = async function generateCategoryButtons(interaction) {
         return;
       }
 
-      await i.deferUpdate();
+      try {
+        await i.deferUpdate();
+      } catch (err) {
+        console.error("Failed to defer interaction:", err);
+      }
       const chosenOption = i.customId;
-      const userId = i.user.id;
       if (chosenOption === "random") {
-        resolve({ chosenOption: "random", userId }); // Special value to indicate "random" selection
+        resolve("random"); // Special value to indicate "random" selection
       } else {
-        resolve({ chosenOption, userId }); // Resolve with the actual category ID
+        resolve(chosenOption); // Resolve with the actual category ID
       }
       collector.stop();
     });
