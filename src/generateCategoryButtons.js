@@ -1,11 +1,18 @@
 const shuffleArray = require("./shuffleArray");
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+const {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ComponentType,
+} = require("discord.js");
 const constants = require("./constants");
 
 // Function generates 3 Category buttons, shuffled from the allCategories container.
 module.exports = async function generateCategoryButtons(interaction) {
   let randomCategories = shuffleArray(constants.allCategories).slice(0, 3);
   const row = new ActionRowBuilder();
+  const finalSassyMessageIndex = constants.sassyMessages.length - 1;
+  let clickCount = 0;
 
   randomCategories.forEach((category) => {
     row.addComponents(
@@ -32,15 +39,12 @@ module.exports = async function generateCategoryButtons(interaction) {
   });
 
   // Collect button click
-  const collector = interaction.channel.createMessageComponentCollector();
-
-  const finalSassyMessageIndex = constants.sassyMessages.length - 1;
-  let clickCount = 0;
-
-  return new Promise((resolve) => {
-    collector.on("collect", async (i) => {
-      const filter = (i) => i.user.id === interaction.user.id;
-      if (!filter(i)) {
+  const collector = await interaction.channel.createMessageComponentCollector({
+    componentType: ComponentType.Button,
+    time: 150_000,
+    filter: (i) => {
+      if (!interaction.user || i.user.id !== interaction.user.id) {
+        console.log("user mismatch at category button click");
         const messageIndex =
           clickCount <= finalSassyMessageIndex
             ? clickCount
@@ -50,9 +54,14 @@ module.exports = async function generateCategoryButtons(interaction) {
           ephemeral: true,
         });
         clickCount++;
-        return;
+        return false;
       }
+      return true;
+    },
+  });
 
+  return new Promise((resolve) => {
+    collector.on("collect", async (i) => {
       try {
         await i.deferUpdate();
       } catch (err) {

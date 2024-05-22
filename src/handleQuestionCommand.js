@@ -3,6 +3,7 @@ const {
   ButtonBuilder,
   ButtonStyle,
   bold,
+  ComponentType,
 } = require("discord.js");
 const fetchSingleQuestion = require("./fetchSingleQuestion");
 const generateCategoryButtons = require("./generateCategoryButtons");
@@ -19,8 +20,12 @@ module.exports = async function handleQuestionCommand(
   try {
     const userId = interaction.user.id;
     const serverId = interaction.guild.id;
-    const sessionId = `${userId}-${serverId}`;
+    const sessionId = `${userId}-${serverId}-${Date.now()}`;
     let currentQuestion = null;
+
+    if (interaction.isCommand()) {
+      activeTriviaSessions.delete(sessionId);
+    }
 
     // Check if a session is already active for this user in this server
     if (activeTriviaSessions.has(sessionId)) {
@@ -32,15 +37,15 @@ module.exports = async function handleQuestionCommand(
     }
 
     activeTriviaSessions.set(sessionId, {
-      sessionId: sessionId,
-      userId: userId,
-      serverId: serverId,
+      sessionId,
+      userId,
+      serverId,
       clickCount: 0,
     });
+    console.log("Active sessions:", activeTriviaSessions);
 
     // Generate Category Buttons
     const selectedCategory = await generateCategoryButtons(interaction);
-
     if (selectedCategory == null) {
       interaction.editReply(`Category selection timed out.`);
       return;
@@ -84,28 +89,31 @@ module.exports = async function handleQuestionCommand(
     });
 
     // Button Interaction Collector
+    const sessionData = activeTriviaSessions.get(sessionId);
     const collector = interaction.channel.createMessageComponentCollector({
-      time: 120000,
+      componentType: ComponentType.Button,
+      time: 150_000,
+      filter: (i) => {
+        if (!sessionData || i.user.id !== sessionData.userId) {
+          console.log("user mismatch at answer button click");
+          const messageIndex =
+            sessionData && sessionData.clickCount <= finalSassyMessageIndex
+              ? sessionData.clickCount
+              : finalSassyMessageIndex;
+          i.reply({
+            content: constants.sassyMessages[messageIndex],
+            ephemeral: true,
+          });
+          if (sessionData) {
+            sessionData.clickCount++;
+          }
+          return false;
+        }
+        return true;
+      },
     });
 
     collector.on("collect", async (i) => {
-      const sessionData = activeTriviaSessions.get(sessionId);
-
-      // Filter to only collect interactions from the user who initiated the command
-      const filter = (i) => i.user.id === sessionData.userId;
-
-      if (!filter(i)) {
-        const messageIndex =
-          sessionData.clickCount <= finalSassyMessageIndex
-            ? sessionData.clickCount
-            : finalSassyMessageIndex;
-        i.reply({
-          content: constants.sassyMessages[messageIndex],
-          ephemeral: true,
-        });
-        sessionData.clickCount++;
-        return;
-      }
       try {
         await i.deferUpdate();
       } catch (err) {
@@ -140,7 +148,7 @@ module.exports = async function handleQuestionCommand(
     // Ends button listening if user didn't select an answer in time.
     collector.on("end", (collected) => {
       const sessionData = activeTriviaSessions.get(sessionId);
-      if (collected.size === 0 && sessionData) {
+      if (collected.size === 0) {
         interaction.followUp(
           `Time\'s up! The correct answer was ${sessionData.currentQuestion.correctAnswer}.`
         );
