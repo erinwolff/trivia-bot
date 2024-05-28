@@ -3,25 +3,12 @@ const fetchSingleQuestion = require("./fetchSingleQuestion");
 const shuffleArray = require("./shuffleArray");
 const constants = require("./constants");
 
-const activeTriviaSessions = new Map();
-
 module.exports = async function handleTriviaCommand(interaction, questionBank) {
   try {
     const userId = interaction.user.id;
     let currentQuestion = null;
     const finalSassyMessageIndex = constants.sassyMessages.length - 1;
     let clickCount = 0;
-
-    // Check if a session is already active for this user in any server
-    if (activeTriviaSessions.has(userId)) {
-      await interaction.reply({
-        content: `I appreciate your ambition, but you already have an active trivia session in server: **${interaction.guild.name}**. Finish that one first!`,
-        ephemeral: true,
-      });
-      return;
-    }
-    console.log("interaction", interaction);
-    activeTriviaSessions.set(userId, { userId });
 
     // Fetch new questions only if questionBank is empty
     if (questionBank.length === 0) {
@@ -113,11 +100,6 @@ module.exports = async function handleTriviaCommand(interaction, questionBank) {
 
     const { question, allAnswers, correctAnswer } = currentQuestion;
 
-    activeTriviaSessions.set(userId, {
-      ...activeTriviaSessions.get(userId),
-      currentQuestion,
-    });
-
     // Shuffle the answers
     const shuffledAnswers = shuffleArray(allAnswers);
 
@@ -158,7 +140,6 @@ module.exports = async function handleTriviaCommand(interaction, questionBank) {
           components: [],
         });
       }
-      activeTriviaSessions.delete(userId);
     } catch (error) {
       // Timeout or other error occurred
       if (error.code === "InteractionCollectorError") {
