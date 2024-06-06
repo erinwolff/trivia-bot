@@ -2,8 +2,59 @@ const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 const fetchSingleQuestion = require("./fetchSingleQuestion");
 const shuffleArray = require("./shuffleArray");
 const constants = require("./constants");
+const sqlite3 = require("sqlite3").verbose();
 
 module.exports = async function handleTriviaCommand(interaction, questionBank) {
+  const guildId = interaction.guild.id;
+  const guildName = interaction.guild.name;
+  try {
+    const db = new sqlite3.Database("./data/trivia_data.db", (err) => {
+      if (err) {
+        console.error("Error opening database:", err.message);
+        return;
+      }
+      // Create the tables using db.run()
+      db.run(
+        `CREATE TABLE IF NOT EXISTS servers (
+                guild_id TEXT PRIMARY KEY,
+                guild_name TEXT NOT NULL,
+                request_count INTEGER DEFAULT 0
+            )`,
+        (err) => {
+          if (err) {
+            console.error("Error creating 'servers' table:", err.message);
+          } else {
+            // Insert or update the server data after the table is created
+            db.run(
+              `
+              INSERT OR IGNORE INTO servers (guild_id, guild_name) VALUES (?, ?)
+          `,
+              [guildId, guildName],
+              function (err) {
+                if (err) {
+                  console.error("Error inserting/ignoring server:", err);
+                } else {
+                  db.run(
+                    `
+                  UPDATE servers 
+                  SET request_count = request_count + 1 
+                  WHERE guild_id = ?
+              `,
+                    [guildId]
+                  );
+                }
+              }
+            );
+
+            db.close();
+          }
+        }
+      );
+    });
+  } catch (error) {
+    console.error("Error inserting/ignoring server:", error);
+  }
+
   try {
     const userId = interaction.user.id;
     let currentQuestion = null;
