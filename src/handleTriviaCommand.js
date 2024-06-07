@@ -7,6 +7,8 @@ const sqlite3 = require("sqlite3").verbose();
 module.exports = async function handleTriviaCommand(interaction, questionBank) {
   const guildId = interaction.guild.id;
   const guildName = interaction.guild.name;
+  const userId = interaction.user.id;
+  const username = interaction.user.username;
   try {
     const db = new sqlite3.Database("./data/trivia_data.db", (err) => {
       if (err) {
@@ -45,8 +47,41 @@ module.exports = async function handleTriviaCommand(interaction, questionBank) {
                 }
               }
             );
+          }
+        }
+      );
 
-            db.close();
+      // Create a table to store user data
+      db.run(
+        `CREATE TABLE IF NOT EXISTS users (
+          user_id TEXT PRIMARY KEY,
+          username TEXT NOT NULL,
+          request_count INTEGER DEFAULT 0
+        )`,
+        (err) => {
+          if (err) {
+            console.error("Error creating 'users' table:", err.message);
+          } else {
+            db.run(
+              `
+              INSERT OR IGNORE INTO users (user_id, username) VALUES (?, ?)
+            `,
+              [userId, username],
+              function (err) {
+                if (err) {
+                  console.error("Error inserting/ignoring user:", err);
+                } else {
+                  db.run(
+                    `
+                  UPDATE users 
+                  SET request_count = request_count + 1 
+                  WHERE user_id = ?
+              `,
+                    [userId]
+                  );
+                }
+              }
+            );
           }
         }
       );
@@ -56,7 +91,6 @@ module.exports = async function handleTriviaCommand(interaction, questionBank) {
   }
 
   try {
-    const userId = interaction.user.id;
     let currentQuestion = null;
     const finalSassyMessageIndex = constants.sassyMessages.length - 1;
     let clickCount = 0;
