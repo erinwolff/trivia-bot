@@ -8,6 +8,8 @@ A Discord bot that delivers a fun and engaging trivia experience with random que
 *   **Category Choices:**  Provides users with specific categories to test their knowledge.
 *   **Dynamic Buttons:**  Employs easy-to-use buttons for answering trivia questions.
 *   **Answer Feedback:** Reveals the correct answer upon submission.
+  
+![trivia-bot](https://github.com/erinwolff/trivia-bot/assets/57080166/f606ad35-a049-4b3c-bc13-ef1d32f03c35)
 
 ## Setup
 
